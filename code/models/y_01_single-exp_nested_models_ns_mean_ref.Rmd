@@ -47,25 +47,28 @@ Notes:
 
 
 ```{r include=FALSE}
-
 rm(list=ls())
 
 # 1a Declare root directory
-project.folder <- paste0(print(here::here()),'/')
+# replace with project directory
+project <- "path/to/project"
+project.folder <- paste0(project, "USA_emissions_code/")
 
 # add folder locations
-source(paste0(project.folder,'0_00_create_folder_structure.R'))
+#source(paste0(project.folder,'0_00_create_folder_structure.R'))
 
 # add file locations
-source(paste0(file.locations.folder,'external_file_locations.R'))
-
+#source(paste0(file.locations.folder,'external_file_locations.R'))
+#packages.folder =  paste0(project.folder, "code/packages/")
 # load packages
-source(paste0(packages.folder,'packages_to_load.R'))
+source(paste0(project.folder,'code/packages/packages_to_load.R'))
 
+code.folder = paste0(project.folder, "code/")
 # load functions
-source(paste0(code.folder, 'models/functions.R')) ## All functions I used in this .rmd are located in this script
+source(paste0(code.folder, 'models/functions.R'))
 
 # load data
+
 source(paste0(code.folder, 'data_loading.R'))
 
 ```
@@ -115,7 +118,7 @@ models_to_make = c("Ns(perc_unemp, df = 4, ref = 5.4)",  # we use the mean as th
              "Ns(perc_nativ, df = 4, ref = 1.29)",
              "Ns(perc_hisp_org, df = 4, ref = 4.42)") %>%
   as.data.frame() %>%
-   rename(., ns_arg = .) %>%
+  dplyr::rename(., ns_arg = .) %>%
   mutate(exposure =  c("perc_unemp", 
                   "perc_pvert",
                   "fam_incom_adjs",
@@ -228,6 +231,7 @@ doSNOW::registerDoSNOW(cluster)
 ## 3. Autoprocessing of NON-LINEAR models
 
 - We use the foreach() function to loop our function over each row of the dataset 'models_to_make_nonlinear_eco'.
+- the output is saved in the models folder
 
 ### 3a. Nonlinear economic and hispanic models
 
@@ -276,7 +280,7 @@ close(pb)
 
 # save list dataset 
 
-saveRDS(models_nonlin_eco, paste0(yanelli_external, "results_updated/models_nonlin_eco_hisp_revised.rds"))
+saveRDS(models_nonlin_eco,"models_nonlin_eco_hisp_revised.rds")
 
 ```
 
@@ -340,7 +344,7 @@ close(pb)
 
 # save list dataset 
 
-#saveRDS(models_nonlin_race, paste0(yanelli_external, "results_updated/models_nonlin_asian_an_revised.rds"))
+saveRDS(models_nonlin_race, "models_nonlin_asian_an_revised.rds")
 
 ```
 
@@ -407,7 +411,7 @@ close(pb)
 
 # save list dataset 
 
-# saveRDS(models_nonlin_blk_wht, paste0(yanelli_external, "results_updated/models_nonlin_blk_wht_revised.rds"))
+saveRDS(models_nonlin_blk_wht, "models_nonlin_blk_wht_revised.rds")
 
 ```
 
@@ -714,12 +718,10 @@ close(pb)
 
 ## 5. Save file
 No need to run this code
+saved when plots were recreated.
+
 ```{r}
-
-#saveRDS(linear_plots, paste0(yanelli_external, "results_updated/models_linear_revised.rds"))
-
-#linear_plots <- readRDS(paste0(yanelli_external, "results_updated/models_linear.rds"))
-
+saveRDS(linear_plots, "models_linear_revised.rds")
 ```
 
 
@@ -761,7 +763,7 @@ nonl_white_plots <- foreach(i = iterators::icount(nrow(nonl_white)), # iterate a
 
 # save plots
 
-saveRDS(nonl_white_plots, paste0(yanelli_external, "results_updated/models_nonlin_wht_revised.rds"))
+saveRDS(nonl_white_plots,"models_nonlin_wht_revised.rds")
 
 ```
 
