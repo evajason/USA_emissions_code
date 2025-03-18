@@ -12,6 +12,8 @@ library(dplyr)
 ```
 
 
+Read rds files, rename columns, and add column for pollutant type
+
 ```{r}
 nh3_agric = readRDS("emis_nh3_agric_county_df.rds") %>%
   rename(emission = nh3_agric) %>%
@@ -40,19 +42,25 @@ so2_ener = readRDS("emis_so2_ener_county_df.rds") %>%
 so2_industry = readRDS("emis_so2_industry_county_df.rds") %>%
   rename(emission = so2_industry) %>%
   mutate(type = "SO2 Industry")
-#df = rbind(nh3_agric, nox_commercial)
+
+# make into one data frame
 df_all = do.call("rbind", list(nh3_agric, nox_commercial, nox_ener, nox_tr, 
                           oc_residential, so2_ener, so2_industry)) %>%
+  # rename regions to make the labels
   mutate(climate_region = ifelse(climate_region=="East_North_Central", "East North Central", climate_region),
          climate_region = ifelse(climate_region=="West_North_Central", "West North Central", climate_region))
 ```
+
+Set up colors and labels
+
+The colors are inspired by figure 1 of the paper
 
 ```{r}
 my_cols_het = c("#7fc97f", "#beaed4", "#fdc086", "#999999", "#386cb0", "#f0027f", "#a65628")
 emission_types = c("NH3 Agriculture", "NOx Commercial", "NOx Transport", "SO2 Industry", "SO2 Energy", "NOx Energy", "OC Residential")
 
 df_colors = data.frame(color = my_cols_het, type = emission_types)
-
+# use subscripts for pollutant chemical symbols
 emission_types_labels =  c(expression("NH"[3]~" Agriculture"), 
                            expression("NO"[x]~" Commercial"),
                            expression("NO"[x]~" Transportat"),
@@ -60,8 +68,15 @@ emission_types_labels =  c(expression("NH"[3]~" Agriculture"),
                            expression("SO"[2]~" Energy"),
                            expression("NO"[x]~" Energy"),
                            expression("OC" ~" Residential"))
+```
+
+
+Calculate the percent change from 1970
+
+```{r}
 df_all_avg = group_by(df_all, Year, type, climate_region) %>%
   summarise(avg = mean(emission, na.rm = T)) %>%
+  # add the colors as a column
   merge(df_colors)
 
 df_1970 = filter(df_all_avg, Year==1970) %>%
@@ -70,16 +85,26 @@ df_1970 = filter(df_all_avg, Year==1970) %>%
 
 df_percent_change = merge(df_all_avg, df_1970) %>%
   mutate(perc_change = ((avg-avg_1970)/avg_1970) * 100)
-  
+```
 
-ggplot(df_percent_change, aes(x = Year, y = perc_change, group = type, color = color)) +
+Make faceted plot for regions showing the percent change in emissions for each pollutant
+
+```{r}
+ggplot(df_percent_change, aes(x = Year, y = perc_change, 
+                              group = type, color = color)) +
   geom_line() +
   geom_point() +
   theme_minimal() +
-  scale_colour_identity(breaks = my_cols_het, labels = emission_types_labels, guide = "legend") +
+  # make the colors determined by the content of the column
+  #This function doesn't automatically include the legend
+  # it must manually be added
+  scale_colour_identity(breaks = my_cols_het, 
+                        labels = emission_types_labels, 
+                        guide = "legend") +
   xlab("") +
   ylab("% Change") +
   facet_wrap(~climate_region) +
+  # use subscript in title
   ggtitle(expression("Percent Change in U.S. Average Emissions (PM"[2.5]~") from 1970")) +
   theme(legend.position="bottom", legend.title=element_blank())
 
