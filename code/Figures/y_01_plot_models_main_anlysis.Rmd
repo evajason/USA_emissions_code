@@ -20,24 +20,26 @@ Plot the association curves for the main analysis
 rm(list=ls())
 
 # 1a Declare root directory
-
-project.folder <- paste0(print(here::here()),'/')
+# replace with project directory
+project <- "path/to/project"
+project.folder <- paste0(project, "USA_emissions_code/")
 
 # add folder locations
-source(paste0(project.folder,'0_00_create_folder_structure.R'))
+#source(paste0(project.folder,'0_00_create_folder_structure.R'))
 
 # add file locations
-source(paste0(file.locations.folder,'external_file_locations.R'))
-
+#source(paste0(file.locations.folder,'external_file_locations.R'))
+#packages.folder =  paste0(project.folder, "code/packages/")
 # load packages
-source(paste0(packages.folder,'packages_to_load.R'))
+source(paste0(project.folder,'code/packages/packages_to_load.R'))
 
+code.folder = paste0(project.folder, "code/")
 # load functions
- source(paste0(code.folder, 'models/functions.R'))
+source(paste0(code.folder, 'models/functions.R'))
 
 # load data
-source(paste0(code.folder, 'data_loading.R'))
 
+source(paste0(code.folder, 'data_loading.R'))
 ```
 
 
@@ -46,22 +48,21 @@ source(paste0(code.folder, 'data_loading.R'))
 Loading in the model results. These models were produced through the 'y_01_single-exp_nested_models_ns_mean_ref.Rmd' from the models folder
 
 ```{r}
-
-models_linear <- readRDS(paste0(yanelli_external, "results_updated/models_linear.rds")) %>%
+model_data <- paste0(project.folder, "code/models")
+models_linear <- readRDS(paste0(model_data, "/models_linear_revised.rds")) %>%
   arrange(outcome)
 
-models_nonlin_asian_an <- readRDS(paste0(yanelli_external, "results_updated/models_nonlin_asian_an.rds")) %>%
+models_nonlin_asian_an <- readRDS(paste0(model_data, "/models_nonlin_asian_an_revised.rds")) %>%
   arrange(outcome)
 
-models_nonlin_blk_wht <- readRDS(paste0(yanelli_external, "results_updated/models_nonlin_blk_wht.rds")) %>%
+models_nonlin_blk_wht <- readRDS(paste0(model_data, "/models_nonlin_blk_wht_revised.rds")) %>%
   arrange(outcome)
 
-models_nonlin_eco_hisp <- readRDS(paste0(yanelli_external, "results_updated/models_nonlin_eco_hisp.rds")) %>%
+models_nonlin_eco_hisp <- readRDS(paste0(model_data, "/models_nonlin_eco_hisp_revised.rds")) %>%
   arrange(outcome)
 
-models_nonlin_wht <- readRDS(paste0(yanelli_external, "results_updated/models_nonlin_wht.rds")) %>%
+models_nonlin_wht <- readRDS(paste0(model_data, "/models_nonlin_wht_revised.rds")) %>%
   arrange(outcome)
-
 ```
 
 
@@ -71,7 +72,7 @@ Merging some of the datasets together to make the next steps easier
 ```{r}
 
 models_nonlin_wht <- models_nonlin_wht %>%
-  rename(plots = plots_white)
+  dplyr::rename(plots = plots_white)
 
 models_nonlinear <- rbind(models_nonlin_asian_an, models_nonlin_eco_hisp) %>%
   rbind(., models_nonlin_wht)
@@ -277,6 +278,70 @@ dev.off()
 
 ```
 
+The following two plots were made for FMPH 491:
+
+This plot charts the % Poverty and % Unemployment on the same plot.
+
+Use the data extracted from the plots made in the models. This is done because 
+the data for the plots is not saved anywhere. See line 72 in 
+USA_emissions_code/code/Figures/functions.R to see how the data is calculated. 
+
+```{r}
+df_so2_ind = rbind(mutate(so2_indus_perc_unemp$data, type = "% Unemployment"), 
+           mutate(so2_indus_perc_pvert$data, type = "% Poverty"))
+plot_ind <- ggplot(df_so2_ind, aes(x = indp_var,  group = type, color = type)) +
+    theme_minimal() +
+    #geom_ribbon(aes(ymin = lci, ymax = uci), fill = "blue", alpha = 0.3) +
+    geom_path(aes(y = beta), size = 1) +
+    geom_hline(yintercept = 0, linetype = 2, size =0.5) +
+    xlab("Percent (%)") +
+    ylab(expression("Percent Change (%) Industry SO"["2"])) +
+  annotate("text", x=54, y = 10, label = "% Poverty") + 
+  annotate("text", x=32, y = 60, label = "% Unemployment") +
+  annotate("text", x=64, y = 1, label = "No Change") +
+  theme(legend.position="none") +
+  ggtitle(expression("Association of Socioeconomic Groups with Industry SO"["2"]))
+plot_ind
+ggsave("socioeconomic.png")
+```
+
+This code make two charts: the percent change in Industry SO2 again vs. Property value and another vs. Familly income
+
+```{r}
+plot_eng_income <- ggplot(so2_indus_fam_incom_adjs$data, aes(x = indp_var/1000)) +
+    theme_minimal() +
+    geom_path(aes(y = beta), size = 1, color = "#1A85FF") +
+    geom_hline(yintercept = 0, linetype = 2, size =0.5) +
+    xlab("Family Income ($1000)") +
+    ylab("") +
+    ylim(c(-24,12)) +
+  # remove the tick makrs because these plots are on the same scale and they number don't need to be repeted twice
+    theme(axis.text.y = element_blank(), 
+      axis.ticks.y = element_blank(), 
+      axis.title.y = element_blank(), aspect.ratio = 1)
+plot_eng_income
+
+df = mutate(so2_indus_propty_val_adjs$data, indp_var = indp_var/1000)
+plot_eng_property <- ggplot(df, aes(x = indp_var)) +
+    theme_minimal() +
+    geom_path(aes(y = beta), size = 1, color = "#D41159") +
+    geom_hline(yintercept = 0, linetype = 2, size =0.5) +
+    xlab("Property Value ($1000)") +
+    ylim(c(-24,12)) +
+  theme(aspect.ratio = 1) +
+  ylab(expression("Percent Change (%) Industry SO"["2"])) +
+  annotate("text", x=1100, y = 1, label = "No Change")
+plot_eng_property
+
+p = grid.arrange(plot_eng_property,plot_eng_income, 
+                 nrow = 1, 
+                 respect=T,
+                 # include the title in the grid arrange
+                 top=textGrob(expression("Association of Property Value and Family Income with Industry SO"["2"]), x = 0, hjust = 0))
+ggsave("Income_property_plot.png", p)
+```
+
+
 ## 2. Plots Race variables
 
 Note that these figures where edited in *y_06_plots_race_modified_axis.Rmd* to address reviewers comments pertaining to visibility of the curve. Thus, the final manuscript figure 2 is NOT the one generated here but in the *y_06_plots_race_modified_axis.Rmd*. 
@@ -285,7 +350,7 @@ Note that these figures where edited in *y_06_plots_race_modified_axis.Rmd* to a
 
 Density plots for economic variables
 
-```{r}
+```{r, eval = F}
 
 dens_black <- data_master %>%
   ggplot(aes(x = perc_black)) +
@@ -332,7 +397,7 @@ dens_hisp <- data_master %>%
 
 ### 2b. Edit axis of Hispanic
 
-```{r}
+```{r, eval=F}
 
 so2_indus_perc_hisp_org <- so2_indus_perc_hisp_org +
    xlim(0,100) 
@@ -363,7 +428,7 @@ xlim(0,100)
 Produce manuscript's Figure 2
 Note the final figures were polished in power point 
 
-```{r}
+```{r, eval =F}
 
 pdf(file = "curves_race.pdf", width = 14, height = 20)            
  grid.arrange(dens_white,

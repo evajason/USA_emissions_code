@@ -22,24 +22,26 @@ This code generates manuscript Figure 2 and 3
 rm(list=ls())
 
 # 1a Declare root directory
-
-project.folder <- paste0(print(here::here()),'/')
+# replace with project directory
+project <- "path/to/project"
+project.folder <- paste0(project, "USA_emissions_code/")
 
 # add folder locations
-source(paste0(project.folder,'0_00_create_folder_structure.R'))
+#source(paste0(project.folder,'0_00_create_folder_structure.R'))
 
 # add file locations
-source(paste0(file.locations.folder,'external_file_locations.R'))
-
+#source(paste0(file.locations.folder,'external_file_locations.R'))
+#packages.folder =  paste0(project.folder, "code/packages/")
 # load packages
-source(paste0(packages.folder,'packages_to_load.R'))
+source(paste0(project.folder,'code/packages/packages_to_load.R'))
 
+code.folder = paste0(project.folder, "code/")
 # load functions
- source(paste0(code.folder, 'models/functions.R'))
+source(paste0(code.folder, 'models/functions.R'))
 
 # load data
-source(paste0(code.folder, 'data_loading.R'))
 
+source(paste0(code.folder, 'data_loading.R'))
 ```
 
 
@@ -48,20 +50,20 @@ source(paste0(code.folder, 'data_loading.R'))
 Loading in the model results. These models were produced through the 'y_01_single-exp_nested_models_ns_mean_ref.Rmd' from the models folder
 
 ```{r}
-
-models_linear <- readRDS(paste0(yanelli_external, "results_updated/models_linear_revised.rds")) %>%
+model_data <- paste0(project.folder, "code/models")
+models_linear <- readRDS(paste0(model_data, "/models_linear_revised.rds")) %>%
   arrange(outcome)
 
-models_nonlin_asian_an <- readRDS(paste0(yanelli_external, "results_updated/models_nonlin_asian_an_revised.rds")) %>%
+models_nonlin_asian_an <- readRDS(paste0(model_data, "/models_nonlin_asian_an_revised.rds")) %>%
   arrange(outcome)
 
-models_nonlin_blk_wht <- readRDS(paste0(yanelli_external, "results_updated/models_nonlin_blk_wht_revised.rds")) %>%
+models_nonlin_blk_wht <- readRDS(paste0(model_data, "/models_nonlin_blk_wht_revised.rds")) %>%
   arrange(outcome)
 
-models_nonlin_eco_hisp <- readRDS(paste0(yanelli_external, "results_updated/models_nonlin_eco_hisp_revised.rds")) %>%
+models_nonlin_eco_hisp <- readRDS(paste0(model_data, "/models_nonlin_eco_hisp_revised.rds")) %>%
   arrange(outcome)
 
-models_nonlin_wht <- readRDS(paste0(yanelli_external, "results_updated/models_nonlin_wht_revised.rds")) %>%
+models_nonlin_wht <- readRDS(paste0(model_data, "/models_nonlin_wht_revised.rds")) %>%
   arrange(outcome)
 
 ```
@@ -73,7 +75,7 @@ Merging some of the datasets together to make the next steps easier
 ```{r}
 
 models_nonlin_wht <- models_nonlin_wht %>%
-  rename(plots = plots_white)
+  dplyr::rename(plots = plots_white)
 
 models_nonlinear <- rbind(models_nonlin_asian_an, models_nonlin_eco_hisp) %>%
   rbind(., models_nonlin_wht) %>%
@@ -226,21 +228,21 @@ Density plots for the independent variables
 
 dens_unempl <- data_master %>%
   ggplot(aes(x = perc_unemp)) +
-  geom_density(aes(y =..scaled..)) +
+  geom_density(aes(y = after_stat(scaled))) +
   theme_minimal(base_size = 15) +
   ylab("") +
   xlab("% Unemployment") 
 
 dens_poverty <- data_master %>%
   ggplot(aes(x = perc_pvert)) +
-   geom_density(aes(y =..scaled..)) +
+   geom_density(aes(y = after_stat(scaled))) +
   theme_minimal(base_size = 15) +
   ylab("") +
   xlab("% Poverty")
 
 dens_income <- data_master %>%
   ggplot(aes(x = fam_incom_adjs)) +
-  geom_density(aes(y =..scaled..)) +
+  geom_density(aes(y = after_stat(scaled))) +
   theme_minimal(base_size = 15) +
   ylab("") +
   xlab("Median Family Income ($1000)") +
@@ -248,7 +250,7 @@ dens_income <- data_master %>%
 
 dens_propty <- data_master %>%
   ggplot(aes(x = propty_val_adjs)) +
-   geom_density(aes(y =..scaled..)) +
+   geom_density(aes(y = after_stat(scaled))) +
   theme_minimal(base_size = 15) +
   ylab("") +
   xlab("Median Propty Value ($1000)") +
@@ -316,7 +318,9 @@ The code chunk produces the manuscripts' Figure 3
 
 Note the final figure was polished in power point
 
-```{r}
+Use the code from y_01_plot_models_main_anlysis.Rmd to made figure 3
+
+```{r, eval=F}
 
 pdf(file = "curves_eco.pdf", width = 14, height = 20)            
  grid.arrange(dens_unempl, 
@@ -376,7 +380,7 @@ Density plots for economic variables
 
 dens_black <- data_master %>%
   ggplot(aes(x = perc_black)) +
-  geom_density(aes(y =..scaled..)) +
+  geom_density(aes(y = after_stat(scaled))) +
   coord_trans(x = trans_sqr_root, expand = FALSE) +
   theme_minimal(base_size = 15) +
   ylab("") +
@@ -385,7 +389,7 @@ dens_black <- data_master %>%
 
 dens_white <- data_master %>%
   ggplot(aes(x = perc_white)) +
-   geom_density(aes(y =..scaled..)) +
+   geom_density(aes(y = after_stat(scaled))) +
   coord_trans(x = trans_sqr, expand = FALSE) +
   theme_minimal(base_size = 15) +
   ylab("") +
@@ -394,7 +398,7 @@ dens_white <- data_master %>%
 
 dens_asian <- data_master %>%
   ggplot(aes(x = perc_asian)) +
-  geom_density(aes(y =..scaled..)) +
+  geom_density(aes(y = after_stat(scaled))) +
   coord_trans(x = trans_sqr_root, expand = FALSE) +
   theme_minimal(base_size = 15) +
   ylab("") +
@@ -404,7 +408,7 @@ dens_asian <- data_master %>%
 
 dens_am_nat <- data_master %>%
   ggplot(aes(x = perc_nativ)) +
-   geom_density(aes(y =..scaled..)) +
+   geom_density(aes(y = after_stat(scaled))) +
   coord_trans(x = trans_sqr_root, expand = FALSE) +
   theme_minimal(base_size = 15) +
   ylab("") +
@@ -413,7 +417,7 @@ dens_am_nat <- data_master %>%
 
 dens_hisp <- data_master %>%
   ggplot(aes(x = perc_hisp_org)) +
-   geom_density(aes(y =..scaled..)) +
+   geom_density(aes(y = after_stat(scaled))) +
   coord_trans(x = trans_sqr_root, expand = FALSE) +
   theme_minimal(base_size = 15) +
   ylab("") +
@@ -428,10 +432,10 @@ dens_hisp <- data_master %>%
 Produce manuscript's Figure 2
 Note the final figures were polished in power point 
 
-```{r}
 
-pdf(file = "curves_race.pdf", width = 14, height = 20)            
- grid.arrange(dens_white,
+```{r}
+pdf(file = "curves_race.pdf", width = 14, height = 20)
+grid.arrange(dens_white,
               dens_black,
               dens_asian,
               dens_am_nat,
@@ -480,15 +484,12 @@ pdf(file = "curves_race.pdf", width = 14, height = 20)
               nox_commer_perc_hisp_org,
               
              nrow = 8, ncol = 5)
-            # left = gridtext::richtext_grob("Industry: SO<sub>2</sub> (% chg)", rot=90,
-             #gp=gpar(fontsize=18,font=8)))
 dev.off() 
-
 ```
 
 ## 3. ISEE Poster figure
 
-```{r}
+```{r, eval=F}
 
 pdf(file = "isee_income.pdf", width = 12, height = 2.5)            
  grid.arrange(so2_energy_fam_incom_adjs + ylab(expression(Energy~SO[2])),
@@ -524,4 +525,30 @@ pdf(file = "isee_race.pdf", width = 11, height = 5)
 dev.off() 
 
 ```
+
+```{r, eval=F}
+df_all = do.call(rbind, list(mutate(so2_indus_perc_white$data, exp="white"), 
+     mutate(so2_indus_perc_black$data, se = 0, exp="black"),
+     mutate(so2_indus_perc_asian$data, exp="asian"),
+     mutate(so2_indus_perc_nativ$data, exp="native"),
+     mutate(so2_indus_perc_hisp_org$data, exp="hisp")))
+
+plot <- df_all %>%
+    ggplot(aes(x = indp_var, group = exp, color = exp)) +
+    theme_minimal() +
+    #geom_ribbon(aes(ymin = lci, ymax = uci), fill = color, alpha = 0.3) +
+    geom_path(aes(y = beta), size = 0.7) +
+    geom_hline(yintercept = 0, linetype = 2, linewidth =0.5) +
+    #xlab("% White") +
+    ylab("") #+
+    #ggtitle(title)
+  plot
+```
+
+```{r}
+
+```
+
+
+
 
